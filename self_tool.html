@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Self Tool">
+<meta name="theme-color" content="#2563eb">
+<link rel="apple-touch-icon" href="icon-selftool.png">
+<link rel="manifest" href="manifest-selftool.json">
+<title>Self Tool</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif;
+    background: #f0f4f8;
+    color: #2d3748;
+    min-height: 100vh;
+    max-width: 100vw;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* ヘッダー */
+  header {
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    color: white;
+    padding: 18px 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(30,64,175,0.25);
+  }
+  header h1 { font-size: 17px; font-weight: 600; letter-spacing: 1px; }
+  .header-date { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+
+  /* タブ */
+  .tabs {
+    display: flex;
+    background: white;
+    border-bottom: 1px solid #d2dce6;
+    position: sticky;
+    top: 0;
+    z-index: 99;
+  }
+  .tab {
+    flex: 1;
+    padding: 12px 8px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: #8a9bb5;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+  .tab-icon { font-size: 16px; display: block; margin-bottom: 2px; }
+
+  /* コンテンツ */
+  .content { padding: 16px; max-width: 480px; margin: 0 auto; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* カード */
+  .card {
+    background: white;
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 6px rgba(30,64,175,0.1);
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2563eb;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* プログレスバー */
+  .progress-container { margin-bottom: 14px; }
+  .progress-bar-bg {
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2563eb, #60a5fa);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+  .progress-text {
+    font-size: 11px;
+    color: #8a9bb5;
+    text-align: right;
+    margin-top: 4px;
+  }
+
+  /* チェックリスト */
+  .check-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f4f8;
+    gap: 12px;
+  }
+  .check-item:last-child { border-bottom: none; }
+  .check-box {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #b8c9da;
+    border-radius: 7px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .check-box.checked {
+    background: #2563eb;
+    border-color: #2563eb;
+  }
+  .check-box.checked::after {
+    content: '✓';
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .check-label { font-size: 14px; line-height: 1.5; }
+  .check-label.checked { color: #a0aec0; text-decoration: line-through; }
+
+  /* テキストエリア */
+  .input-area {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d2dce6;
+    border-radius: 10px;
+    font-size: 16px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 70px;
+    outline: none;
+    transition: border-color 0.2s;
+    background: #f8fafc;
+  }
+  .input-area:focus { border-color: #2563eb; background: white; }
+  .input-label {
+    font-size: 13px;
+    color: #6b7c93;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  /* メモカテゴリ */
+  .category-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .cat-tab {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid #d2dce6;
+    background: white;
+    color: #6b7c93;
+    transition: all 0.2s;
+  }
+  .cat-tab.active {
+    background: #2563eb;
+    color: white;
+    border-color: #2563eb;
+  }
+  .cat-tab.cat-awareness { }
+  .cat-tab.cat-awareness.active { background: #2563eb; border-color: #2563eb; }
+  .cat-tab.cat-emotion.active { background: #7b8fb5; border-color: #7b8fb5; }
+  .cat-tab.cat-action.active { background: #4a8c7a; border-color: #4a8c7a; }
+  .cat-tab.cat-decision.active { background: #8c6d4a; border-color: #8c6d4a; }
+
+  /* メモリスト */
+  .memo-item {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border-left: 4px solid #2563eb;
+    position: relative;
+  }
+  .memo-item.cat-emotion { border-left-color: #7b8fb5; }
+  .memo-item.cat-action { border-left-color: #4a8c7a; }
+  .memo-item.cat-decision { border-left-color: #8c6d4a; }
+  .memo-item .memo-cat {
+    font-size: 11px;
+    font-weight: 600;
+    color: #8a9bb5;
+    margin-bottom: 4px;
+  }
+  .memo-item .memo-text { font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+  .memo-item .memo-date { font-size: 11px; color: #a0aec0; margin-top: 6px; }
+  .memo-delete {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #c0c8d4;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  /* ボタン */
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    font-family: inherit;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: #2563eb; color: white; }
+  .btn-save { background: #1e40af; color: white; margin-top: 12px; }
+
+  /* Weekly質問 */
+  .weekly-question {
+    margin-bottom: 18px;
+  }
+  .weekly-question .q-number {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: white;
+    font-size: 12px;
+    text-align: center;
+    line-height: 22px;
+    margin-right: 8px;
+    font-weight: 600;
+  }
+  .weekly-question .q-text {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: inline;
+  }
+
+  /* 履歴 */
+  .history-section { margin-top: 20px; }
+  .history-toggle {
+    background: none;
+    border: none;
+    color: #2563eb;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+    padding: 8px 0;
+  }
+  .history-list { margin-top: 8px; }
+  .history-item {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 8px;
+  }
+  .history-item .history-date {
+    font-size: 12px;
+    color: #2563eb;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .history-item .history-answer {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #4a5568;
+    white-space: pre-wrap;
+  }
+
+  /* 空状態 */
+  .empty { text-align: center; padding: 30px; color: #a0aec0; font-size: 13px; }
+
+  /* セーブ完了 */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e40af;
+    color: white;
+    padding: 10px 24px;
+    border-radius: 24px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(30,64,175,0.3);
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 200;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Self Tool</h1>
+  <div class="header-date" id="headerDate"></div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('daily')">
+    <span class="tab-icon">🕯️</span>Daily
+  </div>
+  <div class="tab" onclick="switchTab('memo')">
+    <span class="tab-icon">📝</span>Memo
+  </div>
+  <div class="tab" onclick="switchTab('weekly')">
+    <span class="tab-icon">🔥</span>Weekly
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- ===== Daily ===== -->
+  <div class="page active" id="page-daily">
+    <div class="card">
+      <div class="card-title">今日のチェック</div>
+      <div class="progress-container">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+        </div>
+        <div class="progress-text" id="progressText">0 / 3</div>
+      </div>
+      <div id="checkList">
+        <div class="check-item">
+          <div class="check-box" onclick="toggleCheck(0, this)"></div>
+          <span class="check-label">小さなフィードバックをもらった</span>
+        </div>
+        <div class="check-item">
+          <div class="check-box" onclick="toggleCheck(1, this)"></div>
+          <span class="check-label">学びや気づきを発信した</span>
+        </div>
+        <div class="check-item">
+          <div class="check-box" onclick="toggleCheck(2, this)"></div>
+          <span class="check-label">今日の自分の感情に気づいた</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">今日の日記</div>
+      <label class="input-label">今日あったこと、感じたことを自由に書いてください</label>
+      <textarea class="input-area" id="dailyInteraction" placeholder="今日はどんな一日だった？" maxlength="100"></textarea>
+      <div id="charCount" style="font-size:11px;color:#8a9bb5;text-align:right;margin-top:4px;">残り100文字</div>
+      <button class="btn btn-save" onclick="saveDaily()">保存する</button>
+    </div>
+
+    <!-- Daily履歴 -->
+    <div class="history-section">
+      <button class="history-toggle" onclick="toggleDailyHistory()">📅 過去の記録を見る</button>
+      <div id="dailyHistory" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- ===== Memo ===== -->
+  <div class="page" id="page-memo">
+    <div class="card">
+      <div class="card-title">気になった時にメモ</div>
+      <div class="category-tabs">
+        <div class="cat-tab cat-awareness active" onclick="selectCategory('気づき', this)">気づき</div>
+        <div class="cat-tab cat-emotion" onclick="selectCategory('感情', this)">感情</div>
+        <div class="cat-tab cat-action" onclick="selectCategory('行動', this)">行動</div>
+        <div class="cat-tab cat-decision" onclick="selectCategory('決断', this)">決断</div>
+      </div>
+      <textarea class="input-area" id="memoInput" placeholder="思ったこと、感じたことを自由に..."></textarea>
+      <button class="btn btn-primary" style="margin-top:10px" onclick="addMemo()">メモを追加</button>
+    </div>
+
+    <div id="memoList"></div>
+  </div>
+
+  <!-- ===== Weekly ===== -->
+  <div class="page" id="page-weekly">
+    <div class="card">
+      <div class="card-title">今週の振り返り</div>
+
+      <div class="weekly-question">
+        <span class="q-number">1</span>
+        <span class="q-text">今週の自分を一言で表すと？</span>
+        <textarea class="input-area" id="weekly1" style="margin-top:8px" placeholder="一言で..."></textarea>
+      </div>
+
+      <div class="weekly-question">
+        <span class="q-number">2</span>
+        <span class="q-text">成果が見えなくても続けられたことは？</span>
+        <textarea class="input-area" id="weekly2" style="margin-top:8px" placeholder="小さなことでもOK..."></textarea>
+      </div>
+
+      <div class="weekly-question">
+        <span class="q-number">3</span>
+        <span class="q-text">発信できたこと、伝えられたことは？</span>
+        <textarea class="input-area" id="weekly3" style="margin-top:8px" placeholder="SNS・対面・どんな形でも..."></textarea>
+      </div>
+
+      <div class="weekly-question">
+        <span class="q-number">4</span>
+        <span class="q-text">先延ばしにしていることは？</span>
+        <textarea class="input-area" id="weekly4" style="margin-top:8px" placeholder="正直に..."></textarea>
+      </div>
+
+      <div class="weekly-question">
+        <span class="q-number">5</span>
+        <span class="q-text">本当はどうしたい？</span>
+        <textarea class="input-area" id="weekly5" style="margin-top:8px" placeholder="自分の本音を書いてみて..."></textarea>
+      </div>
+
+      <button class="btn btn-save" onclick="saveWeekly()">振り返りを保存</button>
+    </div>
+
+    <!-- Weekly履歴 -->
+    <div class="history-section">
+      <button class="history-toggle" onclick="toggleWeeklyHistory()">📅 過去の振り返りを見る</button>
+      <div id="weeklyHistory" style="display:none"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- トースト -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== ストレージ =====
+const DAILY_KEY = 'self_daily';
+const MEMO_KEY = 'self_memo';
+const WEEKLY_KEY = 'self_weekly';
+
+function getData(key) { return JSON.parse(localStorage.getItem(key) || '{}'); }
+function getList(key) { return JSON.parse(localStorage.getItem(key) || '[]'); }
+function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+
+// ===== 日付 =====
+function today() { return new Date().toISOString().split('T')[0]; }
+function formatDate(d) {
+  const dt = new Date(d + 'T00:00:00');
+  return dt.getFullYear() + '年' + (dt.getMonth()+1) + '月' + dt.getDate() + '日';
+}
+function getWeekId() {
+  const d = new Date();
+  const start = new Date(d.getFullYear(), 0, 1);
+  const weekNo = Math.ceil(((d - start) / 86400000 + start.getDay() + 1) / 7);
+  return d.getFullYear() + '-W' + String(weekNo).padStart(2, '0');
+}
+
+// ヘッダー日付
+document.getElementById('headerDate').textContent = formatDate(today());
+
+// ===== タブ =====
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['daily','memo','weekly'][i] === tab);
+  });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  if (tab === 'memo') renderMemos();
+  if (tab === 'daily') loadDaily();
+  if (tab === 'weekly') loadWeekly();
+}
+
+// ===== トースト =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ===== Daily =====
+let checks = [false, false, false];
+
+function loadDaily() {
+  const data = getData(DAILY_KEY);
+  const d = data[today()] || {};
+  checks = d.checks || [false, false, false];
+  document.getElementById('dailyInteraction').value = d.interaction || '';
+
+  document.querySelectorAll('.check-box').forEach((box, i) => {
+    box.classList.toggle('checked', checks[i]);
+    box.nextElementSibling.classList.toggle('checked', checks[i]);
+  });
+  updateProgress();
+  if (document.getElementById('charCount')) updateCharCount();
+}
+
+function toggleCheck(idx, el) {
+  checks[idx] = !checks[idx];
+  el.classList.toggle('checked');
+  el.nextElementSibling.classList.toggle('checked');
+  updateProgress();
+  autoSaveDaily();
+}
+
+function updateProgress() {
+  const done = checks.filter(Boolean).length;
+  document.getElementById('progressBar').style.width = (done / 3 * 100) + '%';
+  document.getElementById('progressText').textContent = done + ' / 3';
+}
+
+function autoSaveDaily() {
+  const data = getData(DAILY_KEY);
+  if (!data[today()]) data[today()] = {};
+  data[today()].checks = [...checks];
+  data[today()].interaction = document.getElementById('dailyInteraction').value;
+  save(DAILY_KEY, data);
+}
+
+function saveDaily() {
+  autoSaveDaily();
+  showToast('保存しました');
+}
+
+function toggleDailyHistory() {
+  const el = document.getElementById('dailyHistory');
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    renderDailyHistory();
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function renderDailyHistory() {
+  const data = getData(DAILY_KEY);
+  const dates = Object.keys(data).sort().reverse().filter(d => d !== today());
+  const el = document.getElementById('dailyHistory');
+
+  if (dates.length === 0) {
+    el.innerHTML = '<div class="empty">まだ記録がありません</div>';
+    return;
+  }
+
+  const labels = [
+    'フィードバックをもらった',
+    '学びや気づきを発信した',
+    '自分の感情に気づいた'
+  ];
+
+  el.innerHTML = dates.slice(0, 14).map(d => {
+    const entry = data[d];
+    const checkStr = (entry.checks || []).map((c, i) =>
+      (c ? '✓' : '−') + ' ' + labels[i]
+    ).join('<br>');
+    return '<div class="history-item">' +
+      '<div class="history-date">' + formatDate(d) + '</div>' +
+      '<div style="font-size:13px;line-height:1.8;color:#4a5568">' + checkStr + '</div>' +
+      (entry.interaction ? '<div style="font-size:13px;color:#6b7c93;margin-top:6px;border-top:1px solid #e2e8f0;padding-top:6px">💬 ' + escapeHtml(entry.interaction) + '</div>' : '') +
+    '</div>';
+  }).join('');
+}
+
+// ===== Memo =====
+let currentCategory = '気づき';
+
+function selectCategory(cat, el) {
+  currentCategory = cat;
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function addMemo() {
+  const text = document.getElementById('memoInput').value.trim();
+  if (!text) { showToast('メモを入力してください'); return; }
+
+  const memos = getList(MEMO_KEY);
+  memos.unshift({
+    id: Date.now().toString(),
+    category: currentCategory,
+    text: text,
+    date: new Date().toISOString()
+  });
+  save(MEMO_KEY, memos);
+  document.getElementById('memoInput').value = '';
+  renderMemos();
+  showToast('メモを追加しました');
+}
+
+function renderMemos() {
+  const memos = getList(MEMO_KEY);
+  const el = document.getElementById('memoList');
+
+  if (memos.length === 0) {
+    el.innerHTML = '<div class="empty">メモはまだありません</div>';
+    return;
+  }
+
+  const catClass = { '気づき': 'cat-awareness', '感情': 'cat-emotion', '行動': 'cat-action', '決断': 'cat-decision' };
+
+  el.innerHTML = memos.map(m => {
+    const dt = new Date(m.date);
+    const dateStr = (dt.getMonth()+1) + '/' + dt.getDate() + ' ' +
+      String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+    return '<div class="memo-item ' + (catClass[m.category] || '') + '">' +
+      '<button class="memo-delete" onclick="deleteMemo(\'' + m.id + '\')">&times;</button>' +
+      '<div class="memo-cat">' + escapeHtml(m.category) + '</div>' +
+      '<div class="memo-text">' + escapeHtml(m.text) + '</div>' +
+      '<div class="memo-date">' + dateStr + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function deleteMemo(id) {
+  let memos = getList(MEMO_KEY);
+  memos = memos.filter(m => m.id !== id);
+  save(MEMO_KEY, memos);
+  renderMemos();
+}
+
+// ===== Weekly =====
+function loadWeekly() {
+  const data = getData(WEEKLY_KEY);
+  const week = data[getWeekId()] || {};
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById('weekly' + i).value = week['q' + i] || '';
+  }
+}
+
+function saveWeekly() {
+  const data = getData(WEEKLY_KEY);
+  const entry = {};
+  for (let i = 1; i <= 5; i++) {
+    entry['q' + i] = document.getElementById('weekly' + i).value.trim();
+  }
+  data[getWeekId()] = entry;
+  save(WEEKLY_KEY, data);
+  showToast('振り返りを保存しました');
+}
+
+function toggleWeeklyHistory() {
+  const el = document.getElementById('weeklyHistory');
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    renderWeeklyHistory();
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function renderWeeklyHistory() {
+  const data = getData(WEEKLY_KEY);
+  const weeks = Object.keys(data).sort().reverse().filter(w => w !== getWeekId());
+  const el = document.getElementById('weeklyHistory');
+
+  if (weeks.length === 0) {
+    el.innerHTML = '<div class="empty">まだ振り返りがありません</div>';
+    return;
+  }
+
+  const questions = [
+    '今週の自分を一言で表すと？',
+    '成果が見えなくても続けられたことは？',
+    '発信できたこと、伝えられたことは？',
+    '先延ばしにしていることは？',
+    '本当はどうしたい？'
+  ];
+
+  el.innerHTML = weeks.slice(0, 8).map(w => {
+    const entry = data[w];
+    const answers = questions.map((q, i) => {
+      const a = entry['q' + (i+1)] || '';
+      return a ? '<div style="margin-bottom:8px"><span style="font-size:12px;color:#2563eb;font-weight:600">Q' + (i+1) + ' ' + q + '</span><div class="history-answer">' + escapeHtml(a) + '</div></div>' : '';
+    }).filter(Boolean).join('');
+    return '<div class="history-item">' +
+      '<div class="history-date">' + w + '</div>' +
+      answers +
+    '</div>';
+  }).join('');
+}
+
+// ===== ユーティリティ =====
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ===== 文字数カウント =====
+function updateCharCount() {
+  const textarea = document.getElementById('dailyInteraction');
+  const remaining = 100 - textarea.value.length;
+  document.getElementById('charCount').textContent = '残り' + remaining + '文字';
+}
+document.getElementById('dailyInteraction').addEventListener('input', updateCharCount);
+
+// ===== Service Worker =====
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw-selftool.js').catch(() => {});
+}
+
+// ===== 初期化 =====
+loadDaily();
+updateCharCount();
+</script>
+</body>
+</html>
